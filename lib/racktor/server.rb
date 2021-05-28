@@ -2,31 +2,24 @@
 
 require 'socket'
 require 'rack'
-require 'stringio'
 require 'etc'
-require 'uri'
 
 module Racktor
   class Server
     CPU_COUNT = Etc.nprocessors
-    FINALIZE_CLASSES = ['Hanami::Router'].freeze
 
     Ractor.make_shareable(Rack::VERSION)
-    Ractor.make_shareable(URI::DEFAULT_PARSER)
 
-    def self.run(**options, &block)
-      new(block, **options).run
-    end
-
-    def initialize(app_gen, **options)
-      @app_gen = app_gen
+    def initialize(app, **options)
+      @app = app
       @options = options
-      @cpu_count = options[:cpu] || CPU_COUNT
+      @cpu_count = options[:workers] || CPU_COUNT
       @port = options[:port] || 8080
       @host = options[:host] || 'localhost'
 
       init_pipe
       init_workers
+      # TODO: init_supervisor
     end
 
     def run
@@ -43,25 +36,11 @@ module Racktor
     end
 
     def init_workers
-      @workers ||=
-        begin
-          @cpu_count.times.map do
-            app = @app_gen.call
-            app.finalize! if need_to_finalize?(app)
-            Ractor.make_shareable(app)
-
-            Ractor.new(@pipe, app) do |pipe, app|
-              Racktor::Worker.new(pipe, app).run
-            end
-          end
+      @workers ||= @cpu_count.times.map do
+        Ractor.new(@pipe, @app) do |pipe, app|
+          Racktor::Worker.new(pipe, app.compile!).run
         end
-    end
-
-    # TODO: не самый лучший подход, как-нибудь починить
-    def need_to_finalize?(app)
-      return unless FINALIZE_CLASSES.include? app.class.name
-
-      app.finalize!
+      end
     end
   end
 end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'stringio'
+
 module Racktor
   class Worker
     STATUS_CODES = { 200 => 'OK', 500 => 'Internal Server Error' }.freeze
@@ -22,7 +24,13 @@ module Racktor
         end
 
         env = new_env(*request.split)
-        status, headers, body = app.call(env)
+        status, headers, body =
+          begin
+            app.call(env)
+          rescue => e
+            # TODO: сделать нормальную обработку ошибок
+            [500, {}, [e.message]]
+          end
 
         socket.print "HTTP/1.1 #{status} #{STATUS_CODES[status]}\r\n"
         headers.each do |k, v|
@@ -38,8 +46,9 @@ module Racktor
             socket.print chunk
           end
         end
-
+      ensure
         socket.close
+        next
       end
     end
 
