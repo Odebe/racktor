@@ -7,7 +7,7 @@ GIT
 PATH
   remote: .
   specs:
-    racktor (0.1.0)
+    sorta-http (0.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -34,10 +34,10 @@ PLATFORMS
 
 DEPENDENCIES
   rack
-  racktor!
   radix!
   rake (~> 12.0)
   rspec (~> 3.0)
+  sorta-http!
 
 BUNDLED WITH
    2.2.15

@@ -1,4 +1,4 @@
-require_relative '../lib/racktor.rb'
+require_relative '../lib/sorta/http.rb'
 
 HOST = 'localhost'
 PORT = 8080
@@ -6,15 +6,16 @@ WORKERS_COUNT = 2
 
 module Actions
   class Root
-    include Racktor::Web::Action
+    include Sorta::Http::Web::Action
 
     def call
+      logger.info 'root test log'
       "Welcome to RACKtor::Web!"
     end
   end
 
   class Hello
-    include Racktor::Web::Action
+    include Sorta::Http::Web::Action
 
     def call(params)
       "Hello, #{params[:name]}"
@@ -23,7 +24,7 @@ module Actions
 
   module Calc
     class Plus
-      include Racktor::Web::Action
+      include Sorta::Http::Web::Action
 
       def call(params)
         params[:num1] + params[:num2]
@@ -31,7 +32,7 @@ module Actions
     end
 
     class Minus
-      include Racktor::Web::Action
+      include Sorta::Http::Web::Action
 
       def call(params)
         params[:num1] - params[:num2]
@@ -40,16 +41,16 @@ module Actions
   end
 end
 
-hello_schema = Racktor::Web::ParamsValidator.build do
+hello_schema = Sorta::Http::Web::ParamsValidator.build do
   param :name, type: String
 end
 
-calc_schema = Racktor::Web::ParamsValidator.build do
+calc_schema = Sorta::Http::Web::ParamsValidator.build do
   param :num1, type: Integer
   param :num2, type: Integer
 end
 
-app = Racktor::Web::Template::App.build do
+app = Sorta::Http::Web::Template::App.build do
   routes do
     get '/', to: Actions::Root
     get '/hello/:name', to: Actions::Hello, schema: hello_schema
@@ -66,5 +67,5 @@ app = Racktor::Web::Template::App.build do
   end
 end
 
-server = Racktor::Server.new(app,host: HOST, port: PORT, workers: WORKERS_COUNT)
+server = Sorta::Http::Server.new(app,host: HOST, port: PORT, workers: WORKERS_COUNT, logger: Sorta::Http::Logger.new)
 server.run
