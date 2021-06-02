@@ -39,8 +39,9 @@ module Sorta
 
       def init_workers
         @workers ||= @cpu_count.times.map do
-          Ractor.new(@pipe, @app, @logger) do |pipe, app, logger|
-            Worker.new(pipe, app.compile!, logger: logger).run
+          Ractor.new(@app, @pipe, @logger) do |app, pipe, logger|
+            app = app.compile! if app.respond_to? :compile!
+            Worker.new(pipe, app, logger: logger).run
           end
         end
       end

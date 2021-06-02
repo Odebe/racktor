@@ -37,6 +37,7 @@ module Sorta
               app.call(env)
             rescue => e
               # TODO: сделать нормальную обработку ошибок
+              logger.error "#{e.message}\n#{e.backtrace.join("\n")}"
               [500, {}, [e.message]]
             end
 
